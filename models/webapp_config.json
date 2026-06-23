@@ -66,6 +66,12 @@
     "xgb": 0.35,
     "cat": 0.2
   },
+  "hybrid_metrics": {
+    "r2": 0.7265,
+    "mae_vnd": 2073262.0,
+    "rmse_vnd": 3404538.0,
+    "mape_percent": 46.15
+  },
   "feature_names": [
     "num__pro",
     "num__protection",

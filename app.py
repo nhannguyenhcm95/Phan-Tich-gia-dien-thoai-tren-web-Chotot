@@ -10,10 +10,14 @@ Framework: Streamlit
 import streamlit as st
 import pandas as pd
 import numpy as np
-import pickle
 import joblib
 import json
 import os
+import calendar
+import datetime
+
+
+DEBUG_MODE = os.getenv("WEBAPP_DEBUG", "").strip().lower() in {"1", "true", "yes"}
 
 # ════════════════════════════════════════════════════════
 # 1. PAGE CONFIG
@@ -417,50 +421,42 @@ def check_special_date(d):
     }
     lunar_holidays = {
         2025: {
-            (1, 28): "Tết Nguyên Đán", (1, 29): "Tết Nguyên Đán", (1, 30): "Tết Nguyên Đán",
-            (1, 31): "Tết Nguyên Đán", (2, 1): "Tết Nguyên Đán", (2, 2): "Tết Nguyên Đán", (2, 3): "Tết Nguyên Đán",
-            (4, 7): "Giỗ tổ Hùng Vương"
+            (28, 1): "Tết Nguyên Đán", (29, 1): "Tết Nguyên Đán", (30, 1): "Tết Nguyên Đán",
+            (31, 1): "Tết Nguyên Đán", (1, 2): "Tết Nguyên Đán", (2, 2): "Tết Nguyên Đán", (3, 2): "Tết Nguyên Đán",
+            (7, 4): "Giỗ tổ Hùng Vương"
         },
         2026: {
-            (2, 16): "Tết Nguyên Đán", (2, 17): "Tết Nguyên Đán", (2, 18): "Tết Nguyên Đán",
-            (2, 19): "Tết Nguyên Đán", (2, 20): "Tết Nguyên Đán", (2, 21): "Tết Nguyên Đán", (2, 22): "Tết Nguyên Đán",
-            (4, 26): "Giỗ tổ Hùng Vương"
+            (16, 2): "Tết Nguyên Đán", (17, 2): "Tết Nguyên Đán", (18, 2): "Tết Nguyên Đán",
+            (19, 2): "Tết Nguyên Đán", (20, 2): "Tết Nguyên Đán", (21, 2): "Tết Nguyên Đán", (22, 2): "Tết Nguyên Đán",
+            (26, 4): "Giỗ tổ Hùng Vương"
         }
     }
-    is_hol = 0
-    is_sal = 0
-    desc = "Ngày thường"
-    
+
     day_month = (d.day, d.month)
+    holiday_desc = None
+    sale_desc = None
+
     if day_month in holidays:
-        is_hol = 1
-        desc = holidays[day_month]
+        holiday_desc = holidays[day_month]
     elif d.year in lunar_holidays and day_month in lunar_holidays[d.year]:
-        is_hol = 1
-        desc = lunar_holidays[d.year][day_month]
-        
+        holiday_desc = lunar_holidays[d.year][day_month]
+
     if d.day == d.month:
-        is_sal = 1
-        desc = f"Ngày Sale (Ngày đôi {d.day}/{d.month})"
+        sale_desc = f"Ngày Sale (Ngày đôi {d.day}/{d.month})"
     elif d.day == 15:
-        is_sal = 1
-        desc = "Ngày Sale (Payday giữa tháng)"
+        sale_desc = "Ngày Sale (Payday giữa tháng)"
     elif d.day == 25:
-        is_sal = 1
-        desc = "Ngày Sale (Payday cuối tháng)"
+        sale_desc = "Ngày Sale (Payday cuối tháng)"
     elif d.day in [30, 31] or (d.month == 2 and d.day in [28, 29]):
-        is_sal = 1
-        desc = "Ngày Sale (Cuối tháng)"
-        
-    return is_hol, is_sal, desc
+        sale_desc = "Ngày Sale (Cuối tháng)"
 
+    descriptions = [desc for desc in (holiday_desc, sale_desc) if desc]
+    return int(holiday_desc is not None), int(sale_desc is not None), " · ".join(descriptions) or "Ngày thường"
 
-import calendar
-import datetime
 
 def get_html_calendar(year, month, selected_day):
     """Vẽ bảng lịch tháng với chỉ báo ngày Lễ, ngày Sale và ngày đã chọn."""
-    cal = calendar.monthcalendar(year, month)
+    cal = calendar.Calendar(firstweekday=calendar.SUNDAY).monthdayscalendar(year, month)
     month_name = f"Lịch Tháng {month} / {year}"
     
     html = f"""
@@ -675,6 +671,26 @@ except Exception as e:
     models_ok = False
     _err = str(e)
 
+if models_ok:
+    trained_feature_names = config.get("feature_names", [])
+    trained_regions = {
+        name.replace("cat__region_", "")
+        for name in trained_feature_names
+        if name.startswith("cat__region_")
+    }
+    trained_areas = {
+        name.replace("cat__area_", "")
+        for name in trained_feature_names
+        if name.startswith("cat__area_")
+    }
+    trained_models = {
+        name.replace("cat__exact_model_", "")
+        for name in trained_feature_names
+        if name.startswith("cat__exact_model_")
+    }
+else:
+    trained_regions, trained_areas, trained_models = set(), set(), set()
+
 st.markdown("""
 <div class="header-container">
     <div class="header-logo">
@@ -690,10 +706,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 if not models_ok:
-    st.error(
-        f"⚠️ Không thể tải mô hình. Hãy chạy `python setup_models.py` trước.\n\n"
-        f"Lỗi chi tiết: `{_err}`"
-    )
+    st.error("⚠️ Không thể tải mô hình. Hãy chạy `python setup_models.py` trước.")
+    if DEBUG_MODE:
+        st.code(_err, language="text")
     st.info(
         "📋 **Hướng dẫn:**\n"
         "1. Mở Terminal tại thư mục `webapp/`\n"
@@ -767,6 +782,19 @@ with tab1:
         areas = VIETNAM_REGION_TO_AREAS.get(selected_region, ["Other"])
         selected_area = st.selectbox("Quận / Huyện", areas)
 
+        cleaned_selected_region = clean_region_name(selected_region)
+        location_fallbacks = []
+        if cleaned_selected_region not in trained_regions:
+            location_fallbacks.append("tỉnh/thành")
+        if selected_area not in trained_areas:
+            location_fallbacks.append("quận/huyện")
+        if location_fallbacks:
+            st.caption(
+                "ℹ️ " + " và ".join(location_fallbacks).capitalize()
+                + " chưa có nhãn riêng trong dữ liệu huấn luyện; "
+                  "hệ thống sử dụng nhóm Other kết hợp vùng miền để dự đoán."
+            )
+
         selected_zone = get_vietnam_zone(selected_region)
 
         is_new = st.checkbox("📦 Máy Mới (Chưa sử dụng)")
@@ -795,7 +823,6 @@ with tab1:
         )
 
         st.markdown("##### 📅 Chọn Ngày Đăng Tin")
-        import datetime
         today = datetime.date.today()
         selected_date = st.date_input(
             "Ngày đăng tin",
@@ -833,7 +860,7 @@ with tab1:
         st.markdown(get_html_calendar(selected_date.year, selected_date.month, selected_date.day), unsafe_allow_html=True)
 
     st.markdown("")
-    predict_clicked = st.button("🔮 DỰ ĐOÁN GIÁ", use_container_width=True)
+    predict_clicked = st.button("🔮 DỰ ĐOÁN GIÁ", width="stretch")
 
     if predict_clicked:
         # — Mã hoá phone_type —
@@ -850,19 +877,13 @@ with tab1:
             zone_name = zc.replace("region_zone_", "")
             zone_vals[zc] = 1 if zone_name == selected_zone else 0
 
-        # — Trích xuất các danh mục được huấn luyện từ config để mapping an toàn —
-        FEATURE_NAMES = config.get("feature_names", [])
-        ALL_TRAINED_REGIONS = [f.replace("cat__region_", "") for f in FEATURE_NAMES if f.startswith("cat__region_")]
-        ALL_TRAINED_AREAS = [f.replace("cat__area_", "") for f in FEATURE_NAMES if f.startswith("cat__area_")]
-        ALL_TRAINED_MODELS = [f.replace("cat__exact_model_", "") for f in FEATURE_NAMES if f.startswith("cat__exact_model_")]
-
         cleaned_region = clean_region_name(selected_region)
 
         # — Xây dựng dict đầu vào —
         input_dict = {
-            "region":           cleaned_region if cleaned_region in ALL_TRAINED_REGIONS else "Other",
-            "area":             selected_area if selected_area in ALL_TRAINED_AREAS else "Other",
-            "exact_model":      selected_model if selected_model in ALL_TRAINED_MODELS else "Khác",
+            "region":           cleaned_region if cleaned_region in trained_regions else "Other",
+            "area":             selected_area if selected_area in trained_areas else "Other",
+            "exact_model":      selected_model if selected_model in trained_models else "Khác",
             "pro":              int(is_pro),
             "protection":       int(has_protection),
             "ram_gb":           ram_gb,
@@ -895,7 +916,8 @@ with tab1:
             st.success("✅ Dự đoán thành công!")
             
             # ── Khoảng tin cậy (±1 RMSE) ──
-            rmse = config.get("rmse_vnd", 3_430_679)
+            hybrid_metrics = config.get("hybrid_metrics", {})
+            rmse = hybrid_metrics.get("rmse_vnd", config.get("rmse_vnd", 3_430_679))
             lo = max(0, results["hybrid"] - rmse)
             hi = results["hybrid"] + rmse
 
@@ -920,7 +942,7 @@ with tab1:
             """, unsafe_allow_html=True)
 
             # ── Chi tiết từng thuật toán dạng Bento Grid ──
-            st.markdown("<h3 style='font-family:\"Outfit\", sans-serif; font-weight:700; color:#0f172a; margin-top:28px; margin-bottom:16px;'>💡 Dự đoán chi tiết từ các mô hình cơ sở</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='font-family:\"Plus Jakarta Sans\", sans-serif; font-weight:700; color:#0f172a; margin-top:28px; margin-bottom:16px;'>💡 Dự đoán chi tiết từ các mô hình cơ sở</h3>", unsafe_allow_html=True)
             w = config["hybrid_weights"]
             c1, c2, c3 = st.columns(3)
 
@@ -950,12 +972,13 @@ with tab1:
                 """, unsafe_allow_html=True)
 
         except Exception as e:
-            st.error(f"❌ Lỗi khi dự đoán: {str(e)}")
-            with st.expander("🔍 Chi tiết lỗi"):
-                st.exception(e)
+            st.error("❌ Không thể hoàn tất dự đoán. Vui lòng kiểm tra dữ liệu và thử lại.")
+            if DEBUG_MODE:
+                with st.expander("🔍 Chi tiết lỗi (debug)"):
+                    st.exception(e)
 
 with tab2:
-    st.markdown("<h3 style='font-family:\"Outfit\", sans-serif; font-weight:700; color:#0f172a; margin-top:20px; margin-bottom:16px;'>📊 Thông Tin Về Mô Hình & Độ Chính Xác</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='font-family:\"Plus Jakarta Sans\", sans-serif; font-weight:700; color:#0f172a; margin-top:20px; margin-bottom:16px;'>📊 Thông Tin Về Mô Hình & Độ Chính Xác</h3>", unsafe_allow_html=True)
     st.markdown("""
     **Mô hình Hybrid Ensemble** kết hợp 3 thuật toán tốt nhất:
     - **LightGBM** (trọng số 45%) – Gradient Boosting tối ưu bằng Optuna
@@ -968,13 +991,15 @@ with tab2:
     """)
 
     if models_ok:
-        st.markdown("**Hiệu suất trên tập kiểm tra:**")
+        st.markdown("**Hiệu suất Hybrid Ensemble trên tập kiểm tra:**")
+        hybrid_metrics = config.get("hybrid_metrics", {})
         perf_data = {
-            "Chỉ số": ["RMSE (VNĐ)", "MAE (VNĐ)", "RMSE (Log scale)"],
+            "Chỉ số": ["R²", "MAE (VNĐ)", "RMSE (VNĐ)", "MAPE (%)"],
             "Giá trị": [
-                f'{config.get("rmse_vnd", 0):,.0f}',
-                f'{config.get("mae_vnd", 0):,.0f}',
-                f'{config.get("rmse_log_scale", 0):.4f}',
+                f'{hybrid_metrics.get("r2", 0):.4f}',
+                f'{hybrid_metrics.get("mae_vnd", 0):,.0f}',
+                f'{hybrid_metrics.get("rmse_vnd", 0):,.0f}',
+                f'{hybrid_metrics.get("mape_percent", 0):.2f}',
             ],
         }
         st.table(pd.DataFrame(perf_data))
@@ -986,7 +1011,7 @@ with tab2:
             df_bench = pd.DataFrame(bench)
             display_cols = ["Mô hình", "R² Test", "R² CV Mean (k=5)", "MAE (VNĐ)", "RMSE (VNĐ)", "Overfitting?"]
             available_cols = [c for c in display_cols if c in df_bench.columns]
-            st.dataframe(df_bench[available_cols], use_container_width=True, hide_index=True)
+            st.dataframe(df_bench[available_cols], width="stretch", hide_index=True)
 
 
 # ══════════════════════════════════════════════════════
@@ -995,6 +1020,6 @@ with tab2:
 st.markdown('<hr class="sep">', unsafe_allow_html=True)
 st.markdown(
     "<p style='text-align:center;color:#adb5bd;font-size:.8rem;margin-top:1rem'>"
-    "© 2025 Đồ án Phân tích giá điện thoại trên Chợ Tốt | Powered by Streamlit</p>",
+    f"© {datetime.date.today().year} Đồ án Phân tích giá điện thoại trên Chợ Tốt | Powered by Streamlit</p>",
     unsafe_allow_html=True,
 )
