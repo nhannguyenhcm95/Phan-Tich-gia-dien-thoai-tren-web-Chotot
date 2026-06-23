@@ -290,52 +290,56 @@ st.markdown("""
 # 3. DATA CONSTANTS  –  Mapping dữ liệu đào tạo
 # ════════════════════════════════════════════════════════
 
-REGIONS = [
-    "Tp Hồ Chí Minh", "Hà Nội", "Đà Nẵng", "Bình Dương", "Đồng Nai",
-    "Cần Thơ", "Hải Phòng", "An Giang", "Bà Rịa - Vũng Tàu", "Bến Tre",
-    "Bình Định", "Cà Mau", "Đắk Lắk", "Đồng Tháp", "Lâm Đồng",
-    "Long An", "Tây Ninh", "Thừa Thiên Huế", "Tiền Giang", "Vĩnh Long", "Other"
-]
+# Load Vietnam Provinces & Districts from local JSON
+@st.cache_data
+def load_vietnam_provinces():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    provinces_path = os.path.join(base_dir, "vietnam_provinces.json")
+    if os.path.exists(provinces_path):
+        with open(provinces_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
 
-REGION_TO_AREAS = {
-    "Tp Hồ Chí Minh": [
-        "Quận 1", "Quận 3", "Quận 8", "Quận 10", "Quận 12",
-        "Quận Bình Thạnh", "Quận Bình Tân", "Quận Gò Vấp",
-        "Quận Tân Bình", "Quận Tân Phú", "Thành phố Thủ Đức", "Other"
-    ],
-    "Hà Nội": [
-        "Quận Cầu Giấy", "Quận Hoàng Mai",
-        "Quận Thanh Xuân", "Quận Đống Đa", "Other"
-    ],
-    "Đà Nẵng": ["Quận Hải Châu", "Quận Thanh Khê", "Other"],
-    "Cần Thơ": ["Quận Ninh Kiều", "Other"],
-    "Đồng Nai": ["Thành phố Biên Hòa", "Other"],
-    "Đắk Lắk": ["Thành phố Buôn Ma Thuột", "Other"],
-}
+vietnam_data = load_vietnam_provinces()
 
-REGION_TO_ZONE = {
-    "Tp Hồ Chí Minh": "Đông Nam Bộ",
-    "Bình Dương": "Đông Nam Bộ",
-    "Đồng Nai": "Đông Nam Bộ",
-    "Bà Rịa - Vũng Tàu": "Đông Nam Bộ",
-    "Tây Ninh": "Đông Nam Bộ",
-    "Hà Nội": "Đồng Bằng Sông Hồng",
-    "Hải Phòng": "Đồng Bằng Sông Hồng",
-    "An Giang": "Tây Nam Bộ",
-    "Bến Tre": "Tây Nam Bộ",
-    "Cà Mau": "Tây Nam Bộ",
-    "Cần Thơ": "Tây Nam Bộ",
-    "Đồng Tháp": "Tây Nam Bộ",
-    "Long An": "Tây Nam Bộ",
-    "Tiền Giang": "Tây Nam Bộ",
-    "Vĩnh Long": "Tây Nam Bộ",
-    "Đà Nẵng": "Nam Trung Bộ",
-    "Bình Định": "Nam Trung Bộ",
-    "Thừa Thiên Huế": "Bắc Trung Bộ",
-    "Đắk Lắk": "Tây Nguyên",
-    "Lâm Đồng": "Tây Nguyên",
-    "Other": "Khác",
-}
+if vietnam_data:
+    ALL_VIETNAM_REGIONS = sorted([p["name"] for p in vietnam_data])
+    VIETNAM_REGION_TO_AREAS = {p["name"]: sorted(p["districts"]) for p in vietnam_data}
+else:
+    ALL_VIETNAM_REGIONS = [
+        "Tp Hồ Chí Minh", "Hà Nội", "Đà Nẵng", "Bình Dương", "Đồng Nai",
+        "Cần Thơ", "Hải Phòng", "An Giang", "Bà Rịa - Vũng Tàu", "Bến Tre",
+        "Bình Định", "Cà Mau", "Đắk Lắk", "Đồng Tháp", "Lâm Đồng",
+        "Long An", "Tây Ninh", "Thừa Thiên Huế", "Tiền Giang", "Vĩnh Long", "Other"
+    ]
+    VIETNAM_REGION_TO_AREAS = {
+        "Tp Hồ Chí Minh": ["Quận 1", "Quận 3", "Quận 8", "Quận 10", "Quận 12", "Quận Bình Thạnh", "Quận Bình Tân", "Quận Gò Vấp", "Quận Tân Bình", "Quận Tân Phú", "Thành phố Thủ Đức", "Other"],
+        "Hà Nội": ["Quận Cầu Giấy", "Quận Hoàng Mai", "Quận Thanh Xuân", "Quận Đống Đa", "Other"],
+        "Đà Nẵng": ["Quận Hải Châu", "Quận Thanh Khê", "Other"],
+        "Cần Thơ": ["Quận Ninh Kiều", "Other"],
+        "Đồng Nai": ["Thành phố Biên Hòa", "Other"],
+        "Đắk Lắk": ["Thành phố Buôn Ma Thuột", "Other"],
+    }
+
+def get_vietnam_zone(province_name):
+    province_name_clean = province_name.replace("Thành phố ", "").replace("Tỉnh ", "")
+    if province_name_clean in ["Lào Cai", "Yên Bái", "Điện Biên", "Hoà Bình", "Lai Châu", "Sơn La"]:
+        return "Tây Bắc Bộ"
+    if province_name_clean in ["Hà Giang", "Cao Bằng", "Bắc Kạn", "Lạng Sơn", "Tuyên Quang", "Thái Nguyên", "Phú Thọ", "Bắc Giang", "Quảng Ninh"]:
+        return "Đông Bắc Bộ"
+    if province_name_clean in ["Hà Nội", "Hải Phòng", "Bắc Ninh", "Hà Nam", "Hải Dương", "Hưng Yên", "Nam Định", "Ninh Bình", "Thái Bình", "Vĩnh Phúc"]:
+        return "Đồng Bằng Sông Hồng"
+    if province_name_clean in ["Thanh Hóa", "Nghệ An", "Hà Tĩnh", "Quảng Bình", "Quảng Trị", "Thừa Thiên Huế"]:
+        return "Bắc Trung Bộ"
+    if province_name_clean in ["Đà Nẵng", "Quảng Nam", "Quảng Ngãi", "Bình Định", "Phú Yên", "Khánh Hòa", "Ninh Thuận", "Bình Thuận"]:
+        return "Nam Trung Bộ"
+    if province_name_clean in ["Kon Tum", "Gia Lai", "Đắk Lắk", "Đắk Nông", "Lâm Đồng"]:
+        return "Tây Nguyên"
+    if province_name_clean in ["Bình Phước", "Bình Dương", "Đồng Nai", "Tây Ninh", "Bà Rịa - Vũng Tàu", "Hồ Chí Minh", "Tp Hồ Chí Minh"]:
+        return "Đông Nam Bộ"
+    if province_name_clean in ["Long An", "Tiền Giang", "Bến Tre", "Trà Vinh", "Vĩnh Long", "Đồng Tháp", "An Giang", "Kiên Giang", "Cần Thơ", "Hậu Giang", "Sóc Trăng", "Bạc Liêu", "Cà Mau"]:
+        return "Tây Nam Bộ"
+    return "Khác"
 
 ZONES = [
     "Đông Nam Bộ", "Đồng Bằng Sông Hồng", "Tây Nam Bộ",
@@ -553,10 +557,17 @@ with st.sidebar:
 
     # ── RAM ──
     st.markdown("##### RAM (GB)")
-    ram_gb = st.number_input(
-        "RAM", min_value=1, max_value=24, value=8, step=1,
-        label_visibility="collapsed",
-    )
+    if selected_brand == "Iphone":
+        ram_gb = st.selectbox(
+            "RAM", [6], index=0, disabled=True,
+            label_visibility="collapsed",
+            help="iPhone sử dụng cấu hình RAM tối ưu tự động."
+        )
+    else:
+        ram_gb = st.number_input(
+            "RAM", min_value=1, max_value=24, value=8, step=1,
+            label_visibility="collapsed",
+        )
 
     # ── Bộ nhớ trong ──
     st.markdown("##### Bộ Nhớ Trong (GB)")
@@ -575,12 +586,12 @@ col_left, col_right = st.columns(2, gap="large")
 with col_left:
     st.markdown('<p class="section-hdr">📍 Thông Tin Đăng Bán</p>', unsafe_allow_html=True)
 
-    selected_region = st.selectbox("Tỉnh / Thành Phố", REGIONS, index=0)
+    selected_region = st.selectbox("Tỉnh / Thành Phố", ALL_VIETNAM_REGIONS, index=ALL_VIETNAM_REGIONS.index("Tp Hồ Chí Minh") if "Tp Hồ Chí Minh" in ALL_VIETNAM_REGIONS else 0)
 
-    areas = REGION_TO_AREAS.get(selected_region, ["Other"])
+    areas = VIETNAM_REGION_TO_AREAS.get(selected_region, ["Other"])
     selected_area = st.selectbox("Quận / Huyện", areas)
 
-    default_zone = REGION_TO_ZONE.get(selected_region, "Khác")
+    default_zone = get_vietnam_zone(selected_region)
     zone_idx = ZONES.index(default_zone) if default_zone in ZONES else len(ZONES) - 1
     selected_zone = st.selectbox("Vùng Miền", ZONES, index=zone_idx)
 
@@ -611,13 +622,136 @@ with col_right:
         min_value=0, max_value=99999, value=718, step=1,
     )
 
-    days_on_market = st.number_input(
-        "Số ngày đã đăng tin",
-        min_value=0, max_value=365, value=0, step=1,
+    st.markdown("##### 📅 Chọn Ngày Đăng Tin")
+    import datetime
+    today = datetime.date.today()
+    selected_date = st.date_input(
+        "Ngày đăng tin",
+        value=today,
+        max_value=today,
+        label_visibility="collapsed",
+        help="Chọn ngày bạn đăng tin để tự động tính khoảng cách ngày và xác định ngày Lễ/Sale."
     )
 
-    is_holiday  = st.checkbox("🎉 Đăng vào ngày Lễ")
-    is_sale_day = st.checkbox("🏷️ Đăng vào ngày Sale (Ngày đổi/Sự kiện)")
+    # Hàm kiểm tra ngày lễ, ngày sale
+    def check_special_date(d):
+        holidays = {
+            (1, 1): "Tết Dương Lịch",
+            (30, 4): "Giải Phóng Miền Nam",
+            (1, 5): "Quốc Tế Lao Động",
+            (2, 9): "Quốc Khánh",
+            (25, 12): "Giáng Sinh"
+        }
+        lunar_holidays = {
+            2025: {
+                (1, 28): "Tết Nguyên Đán", (1, 29): "Tết Nguyên Đán", (1, 30): "Tết Nguyên Đán",
+                (1, 31): "Tết Nguyên Đán", (2, 1): "Tết Nguyên Đán", (2, 2): "Tết Nguyên Đán", (2, 3): "Tết Nguyên Đán",
+                (4, 7): "Giỗ tổ Hùng Vương"
+            },
+            2026: {
+                (2, 16): "Tết Nguyên Đán", (2, 17): "Tết Nguyên Đán", (2, 18): "Tết Nguyên Đán",
+                (2, 19): "Tết Nguyên Đán", (2, 20): "Tết Nguyên Đán", (2, 21): "Tết Nguyên Đán", (2, 22): "Tết Nguyên Đán",
+                (4, 26): "Giỗ tổ Hùng Vương"
+            }
+        }
+        is_hol = 0
+        is_sal = 0
+        desc = "Ngày thường"
+        
+        day_month = (d.day, d.month)
+        if day_month in holidays:
+            is_hol = 1
+            desc = holidays[day_month]
+        elif d.year in lunar_holidays and day_month in lunar_holidays[d.year]:
+            is_hol = 1
+            desc = lunar_holidays[d.year][day_month]
+            
+        if d.day == d.month:
+            is_sal = 1
+            desc = f"Ngày Sale (Ngày đôi {d.day}/{d.month})"
+        elif d.day == 15:
+            is_sal = 1
+            desc = "Ngày Sale (Payday giữa tháng)"
+        elif d.day == 25:
+            is_sal = 1
+            desc = "Ngày Sale (Payday cuối tháng)"
+        elif d.day in [30, 31] or (d.month == 2 and d.day in [28, 29]):
+            is_sal = 1
+            desc = "Ngày Sale (Cuối tháng)"
+            
+        return is_hol, is_sal, desc
+
+    days_on_market = (today - selected_date).days
+    is_holiday, is_sale_day, special_desc = check_special_date(selected_date)
+
+    if is_holiday:
+        st.info(f"🎉 **{special_desc}** (Cách đây {days_on_market} ngày)")
+    elif is_sale_day:
+        st.warning(f"🏷️ **{special_desc}** (Cách đây {days_on_market} ngày)")
+    else:
+        st.success(f"📅 **Ngày thường** (Cách đây {days_on_market} ngày)")
+
+    # Hàm vẽ calendar bằng HTML
+    import calendar
+    def get_html_calendar(year, month, selected_day):
+        cal = calendar.monthcalendar(year, month)
+        month_name = f"Lịch Tháng {month} / {year}"
+        
+        html = f"""
+        <style>
+            .cal-table {{ width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 11px; text-align: center; }}
+            .cal-th {{ padding: 4px; background-color: #f8fafc; color: #64748b; font-weight: 600; border: 1px solid #e2e8f0; }}
+            .cal-td {{ padding: 6px; border: 1px solid #e2e8f0; position: relative; }}
+            .cal-selected {{ background-color: #ffba00 !important; color: white !important; font-weight: bold; border-radius: 6px; }}
+            .cal-holiday {{ background-color: #fef2f2; color: #ef4444; font-weight: bold; }}
+            .cal-holiday::after {{ content: '🎉'; position: absolute; top: 1px; right: 1px; font-size: 7px; }}
+            .cal-sale {{ background-color: #fffbeb; color: #d97706; font-weight: bold; }}
+            .cal-sale::after {{ content: '🏷️'; position: absolute; top: 1px; right: 1px; font-size: 7px; }}
+            .cal-empty {{ background-color: #f8fafc; }}
+        </style>
+        <div style="background-color: white; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+            <div style="font-weight: 700; text-align: center; margin-bottom: 6px; color: #0f172a; font-size: 12px;">{month_name}</div>
+            <table class="cal-table">
+                <tr>
+                    <th class="cal-th">CN</th>
+                    <th class="cal-th">T2</th>
+                    <th class="cal-th">T3</th>
+                    <th class="cal-th">T4</th>
+                    <th class="cal-th">T5</th>
+                    <th class="cal-th">T6</th>
+                    <th class="cal-th">T7</th>
+                </tr>
+        """
+        for week in cal:
+            html += "<tr>"
+            for day in week:
+                if day == 0:
+                    html += "<td class='cal-td cal-empty'></td>"
+                else:
+                    classes = []
+                    is_sel = (day == selected_day)
+                    
+                    is_hol, is_sal, _ = check_special_date(datetime.date(year, month, day))
+                    if is_hol:
+                        classes.append("cal-holiday")
+                    elif is_sal:
+                        classes.append("cal-sale")
+                    
+                    if is_sel:
+                        classes.append("cal-selected")
+                        
+                    class_str = " ".join(classes)
+                    html += f"<td class='cal-td {class_str}'>{day}</td>"
+            html += "</tr>"
+        html += "</table>"
+        html += "<div style='display: flex; gap: 8px; justify-content: center; margin-top: 6px; font-size: 9px; color: #64748b;'>"
+        html += "<span><span style='color: #ef4444;'>●</span> Lễ</span>"
+        html += "<span><span style='color: #d97706;'>●</span> Sale</span>"
+        html += "<span><span style='color: #ffba00;'>●</span> Chọn</span>"
+        html += "</div></div>"
+        return html
+
+    st.markdown(get_html_calendar(selected_date.year, selected_date.month, selected_date.day), unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════
@@ -645,11 +779,17 @@ if predict_clicked:
         zone_name = zc.replace("region_zone_", "")
         zone_vals[zc] = 1 if zone_name == selected_zone else 0
 
+    # — Trích xuất các danh mục được huấn luyện từ config để mapping an toàn —
+    FEATURE_NAMES = config.get("feature_names", [])
+    ALL_TRAINED_REGIONS = [f.replace("cat__region_", "") for f in FEATURE_NAMES if f.startswith("cat__region_")]
+    ALL_TRAINED_AREAS = [f.replace("cat__area_", "") for f in FEATURE_NAMES if f.startswith("cat__area_")]
+    ALL_TRAINED_MODELS = [f.replace("cat__exact_model_", "") for f in FEATURE_NAMES if f.startswith("cat__exact_model_")]
+
     # — Xây dựng dict đầu vào —
     input_dict = {
-        "region":           selected_region,
-        "area":             selected_area,
-        "exact_model":      selected_model,
+        "region":           selected_region if selected_region in ALL_TRAINED_REGIONS else "Other",
+        "area":             selected_area if selected_area in ALL_TRAINED_AREAS else "Other",
+        "exact_model":      selected_model if selected_model in ALL_TRAINED_MODELS else "Khác",
         "pro":              int(is_pro),
         "protection":       int(has_protection),
         "ram_gb":           ram_gb,
