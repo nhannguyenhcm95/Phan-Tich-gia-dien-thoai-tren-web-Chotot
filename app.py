@@ -31,7 +31,7 @@ st.set_page_config(
 st.markdown("""
 <style>
     /* ── Google Fonts ────────────────────────────── */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
     
     html, body, [class*="css"] { 
         font-family: 'Inter', sans-serif; 
@@ -51,7 +51,7 @@ st.markdown("""
     section[data-testid="stSidebar"] h2 {
         color: #0f172a !important; 
         font-weight: 800 !important;
-        font-family: 'Outfit', sans-serif !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
         border-bottom: 3px solid #ffba00 !important; /* Cam Chợ Tốt */
         padding-bottom: .6rem !important;
         font-size: 1.35rem !important;
@@ -81,7 +81,7 @@ st.markdown("""
 
     /* ── Section headers ────────────────────────── */
     .section-hdr {
-        font-family: 'Outfit', sans-serif !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
         font-size: 1.35rem !important; 
         font-weight: 800 !important; 
         color: #0f172a !important;
@@ -130,7 +130,7 @@ st.markdown("""
         flex-direction: column;
     }
     .header-title {
-        font-family: 'Outfit', sans-serif !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
         font-size: 2.2rem !important;
         font-weight: 900 !important;
         color: #ffffff !important;
@@ -159,7 +159,7 @@ st.markdown("""
         font-size: 1.2rem !important; 
         font-weight: 800 !important;
         border-radius: 16px !important; 
-        font-family: 'Outfit', sans-serif !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
         letter-spacing: 1px !important;
         box-shadow: 0 10px 25px -5px rgba(255, 92, 53, 0.4) !important;
         transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -217,7 +217,7 @@ st.markdown("""
         margin: 0 0 8px 0 !important;
     }
     .result-price-main {
-        font-family: 'Outfit', sans-serif !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
         font-size: 3.4rem !important;
         font-weight: 900 !important;
         color: #ffba00 !important;
@@ -255,7 +255,7 @@ st.markdown("""
         width: 100%;
     }
     .algo-badge {
-        font-family: 'Outfit', sans-serif !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
         font-size: 0.85rem !important;
         font-weight: 700 !important;
         align-self: flex-start;
@@ -274,7 +274,7 @@ st.markdown("""
         margin-bottom: 8px;
     }
     .algo-price {
-        font-family: 'Outfit', sans-serif !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
         font-size: 1.45rem !important;
         font-weight: 800 !important;
         color: #0f172a !important;
