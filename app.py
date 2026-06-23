@@ -996,7 +996,7 @@ with tab2:
         bench = config.get("benchmark_results", [])
         if bench:
             df_bench = pd.DataFrame(bench)
-            display_cols = ["Mô hình", "R² Test", "R² CV Mean (k=5)", "MAE (VNĐ)", "RMSE (VNĐ)", "Overfitting?"]
+            display_cols = ["Mô hình", "R² Test", "R² CV Mean (k=5)", "MAE (VNĐ)", "RMSE (VNĐ)"]
             available_cols = [c for c in display_cols if c in df_bench.columns]
             st.dataframe(df_bench[available_cols], width="stretch", hide_index=True)
 
