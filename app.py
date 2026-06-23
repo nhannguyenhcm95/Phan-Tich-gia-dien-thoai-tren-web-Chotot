@@ -799,7 +799,7 @@ with tab1:
         is_pro = st.checkbox("Cửa hàng (Chuyên trang / Pro)")
         has_protection = st.checkbox("Có chính sách Bảo Vệ / Thanh toán an toàn")
 
-        seller_rating = st.slider(
+        seller_rating = st.number_input(
             "Đánh giá người bán (Sao)",
             min_value=0.0, max_value=5.0, value=5.0, step=0.01, format="%.2f",
         )
