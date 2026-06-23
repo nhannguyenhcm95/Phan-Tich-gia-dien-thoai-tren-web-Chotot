@@ -782,19 +782,6 @@ with tab1:
         areas = VIETNAM_REGION_TO_AREAS.get(selected_region, ["Other"])
         selected_area = st.selectbox("Quận / Huyện", areas)
 
-        cleaned_selected_region = clean_region_name(selected_region)
-        location_fallbacks = []
-        if cleaned_selected_region not in trained_regions:
-            location_fallbacks.append("tỉnh/thành")
-        if selected_area not in trained_areas:
-            location_fallbacks.append("quận/huyện")
-        if location_fallbacks:
-            st.caption(
-                "ℹ️ " + " và ".join(location_fallbacks).capitalize()
-                + " chưa có nhãn riêng trong dữ liệu huấn luyện; "
-                  "hệ thống sử dụng nhóm Other kết hợp vùng miền để dự đoán."
-            )
-
         selected_zone = get_vietnam_zone(selected_region)
 
         is_new = st.checkbox("📦 Máy Mới (Chưa sử dụng)")
