@@ -767,9 +767,7 @@ with tab1:
         areas = VIETNAM_REGION_TO_AREAS.get(selected_region, ["Other"])
         selected_area = st.selectbox("Quận / Huyện", areas)
 
-        default_zone = get_vietnam_zone(selected_region)
-        zone_idx = ZONES.index(default_zone) if default_zone in ZONES else len(ZONES) - 1
-        selected_zone = st.selectbox("Vùng Miền", ZONES, index=zone_idx)
+        selected_zone = get_vietnam_zone(selected_region)
 
         is_new = st.checkbox("📦 Máy Mới (Chưa sử dụng)")
 
@@ -783,7 +781,7 @@ with tab1:
     with col3:
         st.markdown('<p class="section-hdr">👤 Người Bán & Ngày Đăng</p>', unsafe_allow_html=True)
 
-        is_pro = st.checkbox("☑️ Cửa hàng (Chuyên trang / Pro)")
+        is_pro = st.checkbox("Cửa hàng (Chuyên trang / Pro)")
         has_protection = st.checkbox("Có chính sách Bảo Vệ / Thanh toán an toàn")
 
         seller_rating = st.slider(
