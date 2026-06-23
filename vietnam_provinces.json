@@ -490,17 +490,17 @@
     ]
   },
   {
-    "name": "Thành phố Huế",
+    "name": "Tỉnh Thừa Thiên Huế",
     "districts": [
-      "Quận Thuận Hóa",
-      "Quận Phú Xuân",
-      "Thị xã Phong Điền",
-      "Huyện Quảng Điền",
-      "Huyện Phú Vang",
+      "Thành phố Huế",
       "Thị xã Hương Thủy",
       "Thị xã Hương Trà",
+      "Huyện Phong Điền",
+      "Huyện Quảng Điền",
+      "Huyện Phú Vang",
+      "Huyện Phú Lộc",
       "Huyện A Lưới",
-      "Huyện Phú Lộc"
+      "Huyện Nam Đông"
     ]
   },
   {

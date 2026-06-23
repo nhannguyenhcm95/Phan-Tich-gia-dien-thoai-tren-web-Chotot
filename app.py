@@ -321,8 +321,72 @@ else:
         "Đắk Lắk": ["Thành phố Buôn Ma Thuột", "Other"],
     }
 
+def clean_region_name(name):
+    """Chuẩn hóa tên tỉnh thành để khớp với nhãn mô hình AI."""
+    name_clean = name.replace("Thành phố ", "").replace("Tỉnh ", "")
+    if name_clean == "Hồ Chí Minh":
+        return "Tp Hồ Chí Minh"
+    return name_clean
+
+
+def get_iphone_ram(model_name):
+    """Tự động xác định RAM của iPhone dựa theo model."""
+    model_name_lower = model_name.lower()
+    if "17 pro" in model_name_lower:
+        return 12
+    if "17" in model_name_lower:
+        return 8
+    if "16" in model_name_lower:
+        return 8
+    if "15 pro" in model_name_lower:
+        return 8
+    if "15" in model_name_lower:
+        return 6
+    if "14 pro" in model_name_lower:
+        return 6
+    if "14" in model_name_lower:
+        return 6
+    if "13 pro" in model_name_lower:
+        return 6
+    if "13" in model_name_lower:
+        return 4
+    if "12 pro" in model_name_lower:
+        return 6
+    if "12 promax" in model_name_lower:
+        return 6
+    if "12" in model_name_lower:
+        return 4
+    if "11 pro" in model_name_lower:
+        return 4
+    if "11" in model_name_lower:
+        return 4
+    if "xs" in model_name_lower:
+        return 4
+    if "xr" in model_name_lower:
+        return 3
+    if "x" in model_name_lower:
+        return 3
+    if "8 plus" in model_name_lower:
+        return 3
+    if "8" in model_name_lower:
+        return 2
+    if "7 plus" in model_name_lower:
+        return 3
+    if "7" in model_name_lower:
+        return 2
+    if "6s plus" in model_name_lower:
+        return 2
+    if "6s" in model_name_lower:
+        return 2
+    if "se 2020" in model_name_lower:
+        return 3
+    if "se" in model_name_lower:
+        return 2
+    return 6
+
+
 def get_vietnam_zone(province_name):
-    province_name_clean = province_name.replace("Thành phố ", "").replace("Tỉnh ", "")
+    province_name_clean = clean_region_name(province_name)
     if province_name_clean in ["Lào Cai", "Yên Bái", "Điện Biên", "Hoà Bình", "Lai Châu", "Sơn La"]:
         return "Tây Bắc Bộ"
     if province_name_clean in ["Hà Giang", "Cao Bằng", "Bắc Kạn", "Lạng Sơn", "Tuyên Quang", "Thái Nguyên", "Phú Thọ", "Bắc Giang", "Quảng Ninh"]:
@@ -340,6 +404,119 @@ def get_vietnam_zone(province_name):
     if province_name_clean in ["Long An", "Tiền Giang", "Bến Tre", "Trà Vinh", "Vĩnh Long", "Đồng Tháp", "An Giang", "Kiên Giang", "Cần Thơ", "Hậu Giang", "Sóc Trăng", "Bạc Liêu", "Cà Mau"]:
         return "Tây Nam Bộ"
     return "Khác"
+
+
+def check_special_date(d):
+    """Kiểm tra xem ngày chọn có phải là ngày Lễ hay ngày Sale không."""
+    holidays = {
+        (1, 1): "Tết Dương Lịch",
+        (30, 4): "Giải Phóng Miền Nam",
+        (1, 5): "Quốc Tế Lao Động",
+        (2, 9): "Quốc Khánh",
+        (25, 12): "Giáng Sinh"
+    }
+    lunar_holidays = {
+        2025: {
+            (1, 28): "Tết Nguyên Đán", (1, 29): "Tết Nguyên Đán", (1, 30): "Tết Nguyên Đán",
+            (1, 31): "Tết Nguyên Đán", (2, 1): "Tết Nguyên Đán", (2, 2): "Tết Nguyên Đán", (2, 3): "Tết Nguyên Đán",
+            (4, 7): "Giỗ tổ Hùng Vương"
+        },
+        2026: {
+            (2, 16): "Tết Nguyên Đán", (2, 17): "Tết Nguyên Đán", (2, 18): "Tết Nguyên Đán",
+            (2, 19): "Tết Nguyên Đán", (2, 20): "Tết Nguyên Đán", (2, 21): "Tết Nguyên Đán", (2, 22): "Tết Nguyên Đán",
+            (4, 26): "Giỗ tổ Hùng Vương"
+        }
+    }
+    is_hol = 0
+    is_sal = 0
+    desc = "Ngày thường"
+    
+    day_month = (d.day, d.month)
+    if day_month in holidays:
+        is_hol = 1
+        desc = holidays[day_month]
+    elif d.year in lunar_holidays and day_month in lunar_holidays[d.year]:
+        is_hol = 1
+        desc = lunar_holidays[d.year][day_month]
+        
+    if d.day == d.month:
+        is_sal = 1
+        desc = f"Ngày Sale (Ngày đôi {d.day}/{d.month})"
+    elif d.day == 15:
+        is_sal = 1
+        desc = "Ngày Sale (Payday giữa tháng)"
+    elif d.day == 25:
+        is_sal = 1
+        desc = "Ngày Sale (Payday cuối tháng)"
+    elif d.day in [30, 31] or (d.month == 2 and d.day in [28, 29]):
+        is_sal = 1
+        desc = "Ngày Sale (Cuối tháng)"
+        
+    return is_hol, is_sal, desc
+
+
+import calendar
+import datetime
+
+def get_html_calendar(year, month, selected_day):
+    """Vẽ bảng lịch tháng với chỉ báo ngày Lễ, ngày Sale và ngày đã chọn."""
+    cal = calendar.monthcalendar(year, month)
+    month_name = f"Lịch Tháng {month} / {year}"
+    
+    html = f"""
+    <style>
+        .cal-table {{ width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 11px; text-align: center; }}
+        .cal-th {{ padding: 4px; background-color: #f8fafc; color: #64748b; font-weight: 600; border: 1px solid #e2e8f0; }}
+        .cal-td {{ padding: 6px; border: 1px solid #e2e8f0; position: relative; }}
+        .cal-selected {{ background-color: #ffba00 !important; color: white !important; font-weight: bold; border-radius: 6px; }}
+        .cal-holiday {{ background-color: #fef2f2; color: #ef4444; font-weight: bold; }}
+        .cal-holiday::after {{ content: '🎉'; position: absolute; top: 1px; right: 1px; font-size: 7px; }}
+        .cal-sale {{ background-color: #fffbeb; color: #d97706; font-weight: bold; }}
+        .cal-sale::after {{ content: '🏷️'; position: absolute; top: 1px; right: 1px; font-size: 7px; }}
+        .cal-empty {{ background-color: #f8fafc; }}
+    </style>
+    <div style="background-color: white; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+        <div style="font-weight: 700; text-align: center; margin-bottom: 6px; color: #0f172a; font-size: 12px;">{month_name}</div>
+        <table class="cal-table">
+            <tr>
+                <th class="cal-th">CN</th>
+                <th class="cal-th">T2</th>
+                <th class="cal-th">T3</th>
+                <th class="cal-th">T4</th>
+                <th class="cal-th">T5</th>
+                <th class="cal-th">T6</th>
+                <th class="cal-th">T7</th>
+            </tr>
+    """
+    for week in cal:
+        html += "<tr>"
+        for day in week:
+            if day == 0:
+                html += "<td class='cal-td cal-empty'></td>"
+            else:
+                classes = []
+                is_sel = (day == selected_day)
+                
+                is_hol, is_sal, _ = check_special_date(datetime.date(year, month, day))
+                if is_hol:
+                    classes.append("cal-holiday")
+                elif is_sal:
+                    classes.append("cal-sale")
+                
+                if is_sel:
+                    classes.append("cal-selected")
+                    
+                class_str = " ".join(classes)
+                html += f"<td class='cal-td {class_str}'>{day}</td>"
+        html += "</tr>"
+    html += "</table>"
+    html += "<div style='display: flex; gap: 8px; justify-content: center; margin-top: 6px; font-size: 9px; color: #64748b;'>"
+    html += "<span><span style='color: #ef4444;'>●</span> Lễ</span>"
+    html += "<span><span style='color: #d97706;'>●</span> Sale</span>"
+    html += "<span><span style='color: #ffba00;'>●</span> Chọn</span>"
+    html += "</div></div>"
+    return html
+
 
 ZONES = [
     "Đông Nam Bộ", "Đồng Bằng Sông Hồng", "Tây Nam Bộ",
@@ -526,368 +703,261 @@ if not models_ok:
     st.stop()
 
 
-# ══════════════════════════════════════════════════════
-# 6a. SIDEBAR  –  Thông Số Phần Cứng
-# ══════════════════════════════════════════════════════
-with st.sidebar:
-    st.markdown("## 📱 Thông Số Phần Cứng")
+# ── Khởi tạo 2 Tab ──────────────────────────────────
+tab1, tab2 = st.tabs(["🔮 Dự Đoán Giá Điện Thoại", "📊 Thông Tin Mô Hình & Độ Chính Xác"])
 
-    # ── Hệ điều hành ──
-    st.markdown("##### 💻 Hệ Điều Hành:")
-    phone_type = st.radio(
-        "Chọn HĐH:",
-        ["iPhone (iOS)", "Android", "Basic (Phổ thông)"],
-        index=0,
-        label_visibility="collapsed",
-    )
+with tab1:
+    col1, col2, col3 = st.columns(3, gap="medium")
 
-    st.markdown("---")
+    with col1:
+        st.markdown('<p class="section-hdr">📱 Thông Số Phần Cứng</p>', unsafe_allow_html=True)
 
-    # ── Hãng ──
-    brands = PHONE_TYPE_BRANDS.get(phone_type, ["Khác"])
-    st.markdown("##### Hãng Sản Xuất")
-    selected_brand = st.selectbox("Hãng", brands, label_visibility="collapsed")
-
-    # ── Dòng máy ──
-    models_list = BRAND_MODELS.get(selected_brand, ["Khác"])
-    st.markdown("##### Dòng máy (VD: Iphone 15 Pro Max, Samsung S22 Ultra)")
-    selected_model = st.selectbox("Dòng máy", models_list, label_visibility="collapsed")
-
-    st.markdown("---")
-
-    # ── RAM ──
-    st.markdown("##### RAM (GB)")
-    if selected_brand == "Iphone":
-        ram_gb = st.selectbox(
-            "RAM", [6], index=0, disabled=True,
-            label_visibility="collapsed",
-            help="iPhone sử dụng cấu hình RAM tối ưu tự động."
-        )
-    else:
-        ram_gb = st.number_input(
-            "RAM", min_value=1, max_value=24, value=8, step=1,
+        # ── Hệ điều hành ──
+        st.markdown("##### 💻 Hệ Điều Hành:")
+        phone_type = st.radio(
+            "Chọn HĐH:",
+            ["iPhone (iOS)", "Android", "Basic (Phổ thông)"],
+            index=0,
             label_visibility="collapsed",
         )
 
-    # ── Bộ nhớ trong ──
-    st.markdown("##### Bộ Nhớ Trong (GB)")
-    storage_gb = st.number_input(
-        "Storage", min_value=8, max_value=1024, value=256, step=8,
-        label_visibility="collapsed",
-    )
+        st.markdown("---")
 
+        # ── Hãng ──
+        brands = PHONE_TYPE_BRANDS.get(phone_type, ["Khác"])
+        st.markdown("##### Hãng Sản Xuất")
+        selected_brand = st.selectbox("Hãng", brands, label_visibility="collapsed")
 
-# ══════════════════════════════════════════════════════
-# 6b. MAIN AREA  –  Thông tin đăng bán & Người bán
-# ══════════════════════════════════════════════════════
-col_left, col_right = st.columns(2, gap="large")
+        # ── Dòng máy ──
+        models_list = BRAND_MODELS.get(selected_brand, ["Khác"])
+        st.markdown("##### Dòng máy (VD: Iphone 15 Pro Max, Samsung S22 Ultra)")
+        selected_model = st.selectbox("Dòng máy", models_list, label_visibility="collapsed")
 
-# ── CỘT TRÁI: Thông Tin Đăng Bán ────────────────────
-with col_left:
-    st.markdown('<p class="section-hdr">📍 Thông Tin Đăng Bán</p>', unsafe_allow_html=True)
+        st.markdown("---")
 
-    selected_region = st.selectbox("Tỉnh / Thành Phố", ALL_VIETNAM_REGIONS, index=ALL_VIETNAM_REGIONS.index("Tp Hồ Chí Minh") if "Tp Hồ Chí Minh" in ALL_VIETNAM_REGIONS else 0)
-
-    areas = VIETNAM_REGION_TO_AREAS.get(selected_region, ["Other"])
-    selected_area = st.selectbox("Quận / Huyện", areas)
-
-    default_zone = get_vietnam_zone(selected_region)
-    zone_idx = ZONES.index(default_zone) if default_zone in ZONES else len(ZONES) - 1
-    selected_zone = st.selectbox("Vùng Miền", ZONES, index=zone_idx)
-
-    is_new = st.checkbox("📦 Máy Mới (Chưa sử dụng)")
-
-    warranty_months = st.number_input(
-        "Số tháng bảo hành (nếu có)",
-        min_value=0, max_value=36, value=6, step=1,
-    )
-
-    images = st.slider("Số lượng ảnh đăng", min_value=0, max_value=20, value=3)
-
-
-# ── CỘT PHẢI: Thông Tin Người Bán ───────────────────
-with col_right:
-    st.markdown('<p class="section-hdr">👤 Thông Tin Người Bán</p>', unsafe_allow_html=True)
-
-    is_pro = st.checkbox("☑️ Cửa hàng (Chuyên trang / Pro)")
-    has_protection = st.checkbox("Có chính sách Bảo Vệ / Thanh toán an toàn")
-
-    seller_rating = st.slider(
-        "Đánh giá người bán (Sao)",
-        min_value=0.0, max_value=5.0, value=5.0, step=0.01, format="%.2f",
-    )
-
-    sold_ads = st.number_input(
-        "Số tin đã bán thành công",
-        min_value=0, max_value=99999, value=718, step=1,
-    )
-
-    st.markdown("##### 📅 Chọn Ngày Đăng Tin")
-    import datetime
-    today = datetime.date.today()
-    selected_date = st.date_input(
-        "Ngày đăng tin",
-        value=today,
-        max_value=today,
-        label_visibility="collapsed",
-        help="Chọn ngày bạn đăng tin để tự động tính khoảng cách ngày và xác định ngày Lễ/Sale."
-    )
-
-    # Hàm kiểm tra ngày lễ, ngày sale
-    def check_special_date(d):
-        holidays = {
-            (1, 1): "Tết Dương Lịch",
-            (30, 4): "Giải Phóng Miền Nam",
-            (1, 5): "Quốc Tế Lao Động",
-            (2, 9): "Quốc Khánh",
-            (25, 12): "Giáng Sinh"
-        }
-        lunar_holidays = {
-            2025: {
-                (1, 28): "Tết Nguyên Đán", (1, 29): "Tết Nguyên Đán", (1, 30): "Tết Nguyên Đán",
-                (1, 31): "Tết Nguyên Đán", (2, 1): "Tết Nguyên Đán", (2, 2): "Tết Nguyên Đán", (2, 3): "Tết Nguyên Đán",
-                (4, 7): "Giỗ tổ Hùng Vương"
-            },
-            2026: {
-                (2, 16): "Tết Nguyên Đán", (2, 17): "Tết Nguyên Đán", (2, 18): "Tết Nguyên Đán",
-                (2, 19): "Tết Nguyên Đán", (2, 20): "Tết Nguyên Đán", (2, 21): "Tết Nguyên Đán", (2, 22): "Tết Nguyên Đán",
-                (4, 26): "Giỗ tổ Hùng Vương"
-            }
-        }
-        is_hol = 0
-        is_sal = 0
-        desc = "Ngày thường"
-        
-        day_month = (d.day, d.month)
-        if day_month in holidays:
-            is_hol = 1
-            desc = holidays[day_month]
-        elif d.year in lunar_holidays and day_month in lunar_holidays[d.year]:
-            is_hol = 1
-            desc = lunar_holidays[d.year][day_month]
-            
-        if d.day == d.month:
-            is_sal = 1
-            desc = f"Ngày Sale (Ngày đôi {d.day}/{d.month})"
-        elif d.day == 15:
-            is_sal = 1
-            desc = "Ngày Sale (Payday giữa tháng)"
-        elif d.day == 25:
-            is_sal = 1
-            desc = "Ngày Sale (Payday cuối tháng)"
-        elif d.day in [30, 31] or (d.month == 2 and d.day in [28, 29]):
-            is_sal = 1
-            desc = "Ngày Sale (Cuối tháng)"
-            
-        return is_hol, is_sal, desc
-
-    days_on_market = (today - selected_date).days
-    is_holiday, is_sale_day, special_desc = check_special_date(selected_date)
-
-    if is_holiday:
-        st.info(f"🎉 **{special_desc}** (Cách đây {days_on_market} ngày)")
-    elif is_sale_day:
-        st.warning(f"🏷️ **{special_desc}** (Cách đây {days_on_market} ngày)")
-    else:
-        st.success(f"📅 **Ngày thường** (Cách đây {days_on_market} ngày)")
-
-    # Hàm vẽ calendar bằng HTML
-    import calendar
-    def get_html_calendar(year, month, selected_day):
-        cal = calendar.monthcalendar(year, month)
-        month_name = f"Lịch Tháng {month} / {year}"
-        
-        html = f"""
-        <style>
-            .cal-table {{ width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 11px; text-align: center; }}
-            .cal-th {{ padding: 4px; background-color: #f8fafc; color: #64748b; font-weight: 600; border: 1px solid #e2e8f0; }}
-            .cal-td {{ padding: 6px; border: 1px solid #e2e8f0; position: relative; }}
-            .cal-selected {{ background-color: #ffba00 !important; color: white !important; font-weight: bold; border-radius: 6px; }}
-            .cal-holiday {{ background-color: #fef2f2; color: #ef4444; font-weight: bold; }}
-            .cal-holiday::after {{ content: '🎉'; position: absolute; top: 1px; right: 1px; font-size: 7px; }}
-            .cal-sale {{ background-color: #fffbeb; color: #d97706; font-weight: bold; }}
-            .cal-sale::after {{ content: '🏷️'; position: absolute; top: 1px; right: 1px; font-size: 7px; }}
-            .cal-empty {{ background-color: #f8fafc; }}
-        </style>
-        <div style="background-color: white; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-            <div style="font-weight: 700; text-align: center; margin-bottom: 6px; color: #0f172a; font-size: 12px;">{month_name}</div>
-            <table class="cal-table">
-                <tr>
-                    <th class="cal-th">CN</th>
-                    <th class="cal-th">T2</th>
-                    <th class="cal-th">T3</th>
-                    <th class="cal-th">T4</th>
-                    <th class="cal-th">T5</th>
-                    <th class="cal-th">T6</th>
-                    <th class="cal-th">T7</th>
-                </tr>
-        """
-        for week in cal:
-            html += "<tr>"
-            for day in week:
-                if day == 0:
-                    html += "<td class='cal-td cal-empty'></td>"
-                else:
-                    classes = []
-                    is_sel = (day == selected_day)
-                    
-                    is_hol, is_sal, _ = check_special_date(datetime.date(year, month, day))
-                    if is_hol:
-                        classes.append("cal-holiday")
-                    elif is_sal:
-                        classes.append("cal-sale")
-                    
-                    if is_sel:
-                        classes.append("cal-selected")
-                        
-                    class_str = " ".join(classes)
-                    html += f"<td class='cal-td {class_str}'>{day}</td>"
-            html += "</tr>"
-        html += "</table>"
-        html += "<div style='display: flex; gap: 8px; justify-content: center; margin-top: 6px; font-size: 9px; color: #64748b;'>"
-        html += "<span><span style='color: #ef4444;'>●</span> Lễ</span>"
-        html += "<span><span style='color: #d97706;'>●</span> Sale</span>"
-        html += "<span><span style='color: #ffba00;'>●</span> Chọn</span>"
-        html += "</div></div>"
-        return html
-
-    st.markdown(get_html_calendar(selected_date.year, selected_date.month, selected_date.day), unsafe_allow_html=True)
-
-
-# ══════════════════════════════════════════════════════
-# 6c. NÚT DỰ ĐOÁN
-# ══════════════════════════════════════════════════════
-st.markdown("")
-predict_clicked = st.button("🔮 DỰ ĐOÁN GIÁ", use_container_width=True)
-
-
-# ══════════════════════════════════════════════════════
-# 6d. KẾT QUẢ DỰ ĐOÁN
-# ══════════════════════════════════════════════════════
-if predict_clicked:
-    # — Mã hoá phone_type —
-    pt_iphone  = 1 if phone_type == "iPhone (iOS)" else 0
-    pt_android = 1 if phone_type == "Android" else 0
-    pt_basic   = 1 if phone_type == "Basic (Phổ thông)" else 0
-
-    # — Mã hoá brand —
-    brand_encoded = encode_brand(brand_encoder, selected_brand)
-
-    # — One-hot region zone —
-    zone_vals = {}
-    for zc in ZONE_COLUMNS:
-        zone_name = zc.replace("region_zone_", "")
-        zone_vals[zc] = 1 if zone_name == selected_zone else 0
-
-    # — Trích xuất các danh mục được huấn luyện từ config để mapping an toàn —
-    FEATURE_NAMES = config.get("feature_names", [])
-    ALL_TRAINED_REGIONS = [f.replace("cat__region_", "") for f in FEATURE_NAMES if f.startswith("cat__region_")]
-    ALL_TRAINED_AREAS = [f.replace("cat__area_", "") for f in FEATURE_NAMES if f.startswith("cat__area_")]
-    ALL_TRAINED_MODELS = [f.replace("cat__exact_model_", "") for f in FEATURE_NAMES if f.startswith("cat__exact_model_")]
-
-    # — Xây dựng dict đầu vào —
-    input_dict = {
-        "region":           selected_region if selected_region in ALL_TRAINED_REGIONS else "Other",
-        "area":             selected_area if selected_area in ALL_TRAINED_AREAS else "Other",
-        "exact_model":      selected_model if selected_model in ALL_TRAINED_MODELS else "Khác",
-        "pro":              int(is_pro),
-        "protection":       int(has_protection),
-        "ram_gb":           ram_gb,
-        "storage_gb":       storage_gb,
-        "images":           images,
-        "seller_rating":    seller_rating,
-        "sold_ads":         sold_ads,
-        "brand":            brand_encoded,
-        "is_new":           int(is_new),
-        "warranty_months":  warranty_months,
-        "days_on_market":   days_on_market,
-        "is_holiday":       int(is_holiday),
-        "is_sale_day":      int(is_sale_day),
-        "phone_type_Android": pt_android,
-        "phone_type_Basic":   pt_basic,
-        "phone_type_iPhone":  pt_iphone,
-    }
-    input_dict.update(zone_vals)
-
-    # — Dự đoán —
-    try:
-        with st.spinner("⏳ Đang tính toán..."):
-            results = predict_price(
-                config, preprocessor, brand_encoder,
-                lgbm_model, xgb_model, cat_model,
-                input_dict,
+        # ── RAM ──
+        st.markdown("##### RAM (GB)")
+        if selected_brand == "Iphone":
+            default_ram = get_iphone_ram(selected_model)
+            ram_gb = st.selectbox(
+                "RAM", [default_ram], index=0, disabled=True,
+                label_visibility="collapsed",
+                help="iPhone sử dụng cấu hình RAM tối ưu tự động dựa trên dòng máy."
+            )
+        else:
+            ram_gb = st.number_input(
+                "RAM", min_value=1, max_value=24, value=8, step=1,
+                label_visibility="collapsed",
             )
 
-        # ── Hiển thị kết quả ──
-        st.success("✅ Dự đoán thành công!")
-        
-        # ── Khoảng tin cậy (±1 RMSE) ──
-        rmse = config.get("rmse_vnd", 3_430_679)
-        lo = max(0, results["hybrid"] - rmse)
-        hi = results["hybrid"] + rmse
+        # ── Bộ nhớ trong ──
+        st.markdown("##### Bộ Nhớ Trong (GB)")
+        storage_gb = st.number_input(
+            "Storage", min_value=8, max_value=1024, value=256, step=8,
+            label_visibility="collapsed",
+        )
 
-        # ── Kết quả chính dạng Card Premium ──
-        st.markdown(f"""
-        <div class="result-card">
-            <div class="result-header">
-                <span class="result-badge">✨ KẾT QUẢ ĐỊNH GIÁ AI</span>
+    with col2:
+        st.markdown('<p class="section-hdr">📍 Thông Tin Đăng Bán</p>', unsafe_allow_html=True)
+
+        default_region_name = "Thành phố Hồ Chí Minh"
+        region_idx = ALL_VIETNAM_REGIONS.index(default_region_name) if default_region_name in ALL_VIETNAM_REGIONS else 0
+        selected_region = st.selectbox("Tỉnh / Thành Phố", ALL_VIETNAM_REGIONS, index=region_idx)
+
+        areas = VIETNAM_REGION_TO_AREAS.get(selected_region, ["Other"])
+        selected_area = st.selectbox("Quận / Huyện", areas)
+
+        default_zone = get_vietnam_zone(selected_region)
+        zone_idx = ZONES.index(default_zone) if default_zone in ZONES else len(ZONES) - 1
+        selected_zone = st.selectbox("Vùng Miền", ZONES, index=zone_idx)
+
+        is_new = st.checkbox("📦 Máy Mới (Chưa sử dụng)")
+
+        warranty_months = st.number_input(
+            "Số tháng bảo hành (nếu có)",
+            min_value=0, max_value=36, value=6, step=1,
+        )
+
+        images = st.slider("Số lượng ảnh đăng", min_value=0, max_value=20, value=3)
+
+    with col3:
+        st.markdown('<p class="section-hdr">👤 Người Bán & Ngày Đăng</p>', unsafe_allow_html=True)
+
+        is_pro = st.checkbox("☑️ Cửa hàng (Chuyên trang / Pro)")
+        has_protection = st.checkbox("Có chính sách Bảo Vệ / Thanh toán an toàn")
+
+        seller_rating = st.slider(
+            "Đánh giá người bán (Sao)",
+            min_value=0.0, max_value=5.0, value=5.0, step=0.01, format="%.2f",
+        )
+
+        sold_ads = st.number_input(
+            "Số tin đã bán thành công",
+            min_value=0, max_value=99999, value=718, step=1,
+        )
+
+        st.markdown("##### 📅 Chọn Ngày Đăng Tin")
+        import datetime
+        today = datetime.date.today()
+        selected_date = st.date_input(
+            "Ngày đăng tin",
+            value=today,
+            max_value=today,
+            label_visibility="collapsed",
+            help="Chọn ngày bạn đăng tin để tự động tính khoảng cách ngày và xác định ngày Lễ/Sale."
+        )
+
+        days_on_market = (today - selected_date).days
+        is_holiday, is_sale_day, special_desc = check_special_date(selected_date)
+
+        if is_holiday:
+            st.markdown(f"""
+            <div style="background-color: #fef2f2; border: 1px solid #fca5a5; padding: 12px; border-radius: 12px; margin-top: 10px; margin-bottom: 10px;">
+                <span style="color: #dc2626; font-weight: 700; font-size: 13px;">🎉 Đăng vào: {special_desc}</span><br>
+                <span style="color: #7f1d1d; font-size: 12px;">Đã đăng: <strong>{days_on_market}</strong> ngày trước</span>
             </div>
-            <div class="result-body">
-                <p class="result-price-label">Giá đề xuất (Hybrid Ensemble)</p>
-                <h1 class="result-price-main">{results["hybrid"]:,.0f} <span style="font-size: 1.8rem; font-weight: 700; color: #94a3b8;">VNĐ</span></h1>
-                <div class="result-divider"></div>
-                <div class="result-confidence">
-                    <span class="result-confidence-icon">🎯</span>
-                    <span class="result-confidence-text">
-                        Khoảng giá tham khảo: <strong style="color: #ffba00;">{lo:,.0f} VNĐ</strong> – <strong style="color: #ffba00;">{hi:,.0f} VNĐ</strong> (±RMSE)
-                    </span>
+            """, unsafe_allow_html=True)
+        elif is_sale_day:
+            st.markdown(f"""
+            <div style="background-color: #fffbeb; border: 1px solid #fcd34d; padding: 12px; border-radius: 12px; margin-top: 10px; margin-bottom: 10px;">
+                <span style="color: #d97706; font-weight: 700; font-size: 13px;">🏷️ Đăng vào: {special_desc}</span><br>
+                <span style="color: #78350f; font-size: 12px;">Đã đăng: <strong>{days_on_market}</strong> ngày trước</span>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div style="background-color: #f0fdf4; border: 1px solid #86efac; padding: 12px; border-radius: 12px; margin-top: 10px; margin-bottom: 10px;">
+                <span style="color: #16a34a; font-weight: 700; font-size: 13px;">📅 Đăng vào: Ngày thường</span><br>
+                <span style="color: #14532d; font-size: 12px;">Đã đăng: <strong>{days_on_market}</strong> ngày trước</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown(get_html_calendar(selected_date.year, selected_date.month, selected_date.day), unsafe_allow_html=True)
+
+    st.markdown("")
+    predict_clicked = st.button("🔮 DỰ ĐOÁN GIÁ", use_container_width=True)
+
+    if predict_clicked:
+        # — Mã hoá phone_type —
+        pt_iphone  = 1 if phone_type == "iPhone (iOS)" else 0
+        pt_android = 1 if phone_type == "Android" else 0
+        pt_basic   = 1 if phone_type == "Basic (Phổ thông)" else 0
+
+        # — Mã hoá brand —
+        brand_encoded = encode_brand(brand_encoder, selected_brand)
+
+        # — One-hot region zone —
+        zone_vals = {}
+        for zc in ZONE_COLUMNS:
+            zone_name = zc.replace("region_zone_", "")
+            zone_vals[zc] = 1 if zone_name == selected_zone else 0
+
+        # — Trích xuất các danh mục được huấn luyện từ config để mapping an toàn —
+        FEATURE_NAMES = config.get("feature_names", [])
+        ALL_TRAINED_REGIONS = [f.replace("cat__region_", "") for f in FEATURE_NAMES if f.startswith("cat__region_")]
+        ALL_TRAINED_AREAS = [f.replace("cat__area_", "") for f in FEATURE_NAMES if f.startswith("cat__area_")]
+        ALL_TRAINED_MODELS = [f.replace("cat__exact_model_", "") for f in FEATURE_NAMES if f.startswith("cat__exact_model_")]
+
+        cleaned_region = clean_region_name(selected_region)
+
+        # — Xây dựng dict đầu vào —
+        input_dict = {
+            "region":           cleaned_region if cleaned_region in ALL_TRAINED_REGIONS else "Other",
+            "area":             selected_area if selected_area in ALL_TRAINED_AREAS else "Other",
+            "exact_model":      selected_model if selected_model in ALL_TRAINED_MODELS else "Khác",
+            "pro":              int(is_pro),
+            "protection":       int(has_protection),
+            "ram_gb":           ram_gb,
+            "storage_gb":       storage_gb,
+            "images":           images,
+            "seller_rating":    seller_rating,
+            "sold_ads":         sold_ads,
+            "brand":            brand_encoded,
+            "is_new":           int(is_new),
+            "warranty_months":  warranty_months,
+            "days_on_market":   days_on_market,
+            "is_holiday":       int(is_holiday),
+            "is_sale_day":      int(is_sale_day),
+            "phone_type_Android": pt_android,
+            "phone_type_Basic":   pt_basic,
+            "phone_type_iPhone":  pt_iphone,
+        }
+        input_dict.update(zone_vals)
+
+        # — Dự đoán —
+        try:
+            with st.spinner("⏳ Đang tính toán..."):
+                results = predict_price(
+                    config, preprocessor, brand_encoder,
+                    lgbm_model, xgb_model, cat_model,
+                    input_dict,
+                )
+
+            # ── Hiển thị kết quả ──
+            st.success("✅ Dự đoán thành công!")
+            
+            # ── Khoảng tin cậy (±1 RMSE) ──
+            rmse = config.get("rmse_vnd", 3_430_679)
+            lo = max(0, results["hybrid"] - rmse)
+            hi = results["hybrid"] + rmse
+
+            # ── Kết quả chính dạng Card Premium ──
+            st.markdown(f"""
+            <div class="result-card">
+                <div class="result-header">
+                    <span class="result-badge">✨ KẾT QUẢ ĐỊNH GIÁ AI</span>
+                </div>
+                <div class="result-body">
+                    <p class="result-price-label">Giá đề xuất (Hybrid Ensemble)</p>
+                    <h1 class="result-price-main">{results["hybrid"]:,.0f} <span style="font-size: 1.8rem; font-weight: 700; color: #94a3b8;">VNĐ</span></h1>
+                    <div class="result-divider"></div>
+                    <div class="result-confidence">
+                        <span class="result-confidence-icon">🎯</span>
+                        <span class="result-confidence-text">
+                            Khoảng giá tham khảo: <strong style="color: #ffba00;">{lo:,.0f} VNĐ</strong> – <strong style="color: #ffba00;">{hi:,.0f} VNĐ</strong> (±RMSE)
+                        </span>
+                    </div>
                 </div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # ── Chi tiết từng thuật toán dạng Bento Grid ──
-        st.markdown("<h3 style='font-family:\"Outfit\", sans-serif; font-weight:700; color:#0f172a; margin-top:28px; margin-bottom:16px;'>💡 Dự đoán chi tiết từ các mô hình cơ sở</h3>", unsafe_allow_html=True)
-        w = config["hybrid_weights"]
-        c1, c2, c3 = st.columns(3)
-
-        with c1:
-            st.markdown(f"""
-            <div class="algo-inner algo-lgbm">
-                <span class="algo-badge">LightGBM</span>
-                <div class="algo-weight">Trọng số {w["lgbm"]*100:.0f}%</div>
-                <div class="algo-price">{results["lgbm"]:,.0f} <span style="font-size:0.85rem; font-weight:600; color:#64748b;">VNĐ</span></div>
-            </div>
-            """, unsafe_allow_html=True)
-        with c2:
-            st.markdown(f"""
-            <div class="algo-inner algo-xgb">
-                <span class="algo-badge">XGBoost</span>
-                <div class="algo-weight">Trọng số {w["xgb"]*100:.0f}%</div>
-                <div class="algo-price">{results["xgb"]:,.0f} <span style="font-size:0.85rem; font-weight:600; color:#64748b;">VNĐ</span></div>
-            </div>
-            """, unsafe_allow_html=True)
-        with c3:
-            st.markdown(f"""
-            <div class="algo-inner algo-cat">
-                <span class="algo-badge">CatBoost</span>
-                <div class="algo-weight">Trọng số {w["cat"]*100:.0f}%</div>
-                <div class="algo-price">{results["cat"]:,.0f} <span style="font-size:0.85rem; font-weight:600; color:#64748b;">VNĐ</span></div>
-            </div>
             """, unsafe_allow_html=True)
 
-    except Exception as e:
-        st.error(f"❌ Lỗi khi dự đoán: {str(e)}")
-        with st.expander("🔍 Chi tiết lỗi"):
-            st.exception(e)
+            # ── Chi tiết từng thuật toán dạng Bento Grid ──
+            st.markdown("<h3 style='font-family:\"Outfit\", sans-serif; font-weight:700; color:#0f172a; margin-top:28px; margin-bottom:16px;'>💡 Dự đoán chi tiết từ các mô hình cơ sở</h3>", unsafe_allow_html=True)
+            w = config["hybrid_weights"]
+            c1, c2, c3 = st.columns(3)
 
+            with c1:
+                st.markdown(f"""
+                <div class="algo-inner algo-lgbm">
+                    <span class="algo-badge">LightGBM</span>
+                    <div class="algo-weight">Trọng số {w["lgbm"]*100:.0f}%</div>
+                    <div class="algo-price">{results["lgbm"]:,.0f} <span style="font-size:0.85rem; font-weight:600; color:#64748b;">VNĐ</span></div>
+                </div>
+                """, unsafe_allow_html=True)
+            with c2:
+                st.markdown(f"""
+                <div class="algo-inner algo-xgb">
+                    <span class="algo-badge">XGBoost</span>
+                    <div class="algo-weight">Trọng số {w["xgb"]*100:.0f}%</div>
+                    <div class="algo-price">{results["xgb"]:,.0f} <span style="font-size:0.85rem; font-weight:600; color:#64748b;">VNĐ</span></div>
+                </div>
+                """, unsafe_allow_html=True)
+            with c3:
+                st.markdown(f"""
+                <div class="algo-inner algo-cat">
+                    <span class="algo-badge">CatBoost</span>
+                    <div class="algo-weight">Trọng số {w["cat"]*100:.0f}%</div>
+                    <div class="algo-price">{results["cat"]:,.0f} <span style="font-size:0.85rem; font-weight:600; color:#64748b;">VNĐ</span></div>
+                </div>
+                """, unsafe_allow_html=True)
 
-# ══════════════════════════════════════════════════════
-# 7. FOOTER  –  Thông tin mô hình
-# ══════════════════════════════════════════════════════
-st.markdown('<hr class="sep">', unsafe_allow_html=True)
+        except Exception as e:
+            st.error(f"❌ Lỗi khi dự đoán: {str(e)}")
+            with st.expander("🔍 Chi tiết lỗi"):
+                st.exception(e)
 
-with st.expander("📊 Thông tin về mô hình & độ chính xác"):
+with tab2:
+    st.markdown("<h3 style='font-family:\"Outfit\", sans-serif; font-weight:700; color:#0f172a; margin-top:20px; margin-bottom:16px;'>📊 Thông Tin Về Mô Hình & Độ Chính Xác</h3>", unsafe_allow_html=True)
     st.markdown("""
     **Mô hình Hybrid Ensemble** kết hợp 3 thuật toán tốt nhất:
     - **LightGBM** (trọng số 45%) – Gradient Boosting tối ưu bằng Optuna
@@ -920,6 +990,11 @@ with st.expander("📊 Thông tin về mô hình & độ chính xác"):
             available_cols = [c for c in display_cols if c in df_bench.columns]
             st.dataframe(df_bench[available_cols], use_container_width=True, hide_index=True)
 
+
+# ══════════════════════════════════════════════════════
+# 7. FOOTER
+# ══════════════════════════════════════════════════════
+st.markdown('<hr class="sep">', unsafe_allow_html=True)
 st.markdown(
     "<p style='text-align:center;color:#adb5bd;font-size:.8rem;margin-top:1rem'>"
     "© 2025 Đồ án Phân tích giá điện thoại trên Chợ Tốt | Powered by Streamlit</p>",
