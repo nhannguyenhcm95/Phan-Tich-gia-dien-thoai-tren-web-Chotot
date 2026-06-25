@@ -417,19 +417,6 @@ def check_special_date(d):
         (30, 4): "Giải Phóng Miền Nam",
         (1, 5): "Quốc Tế Lao Động",
         (2, 9): "Quốc Khánh",
-        (25, 12): "Giáng Sinh"
-    }
-    lunar_holidays = {
-        2025: {
-            (28, 1): "Tết Nguyên Đán", (29, 1): "Tết Nguyên Đán", (30, 1): "Tết Nguyên Đán",
-            (31, 1): "Tết Nguyên Đán", (1, 2): "Tết Nguyên Đán", (2, 2): "Tết Nguyên Đán", (3, 2): "Tết Nguyên Đán",
-            (7, 4): "Giỗ tổ Hùng Vương"
-        },
-        2026: {
-            (16, 2): "Tết Nguyên Đán", (17, 2): "Tết Nguyên Đán", (18, 2): "Tết Nguyên Đán",
-            (19, 2): "Tết Nguyên Đán", (20, 2): "Tết Nguyên Đán", (21, 2): "Tết Nguyên Đán", (22, 2): "Tết Nguyên Đán",
-            (26, 4): "Giỗ tổ Hùng Vương"
-        }
     }
 
     day_month = (d.day, d.month)
@@ -438,8 +425,12 @@ def check_special_date(d):
 
     if day_month in holidays:
         holiday_desc = holidays[day_month]
-    elif d.year in lunar_holidays and day_month in lunar_holidays[d.year]:
-        holiday_desc = lunar_holidays[d.year][day_month]
+    elif d.year == 2025 and ((d.month == 1 and d.day >= 28) or (d.month == 2 and d.day <= 5)):
+        holiday_desc = "Tết Nguyên Đán"
+    elif d.year == 2026 and d.month == 2 and 15 <= d.day <= 23:
+        holiday_desc = "Tết Nguyên Đán"
+    elif d.weekday() >= 5:
+        holiday_desc = "Cuối tuần"
 
     if d.day == d.month:
         sale_desc = f"Ngày Sale (Ngày đôi {d.day}/{d.month})"
@@ -447,8 +438,6 @@ def check_special_date(d):
         sale_desc = "Ngày Sale (Payday giữa tháng)"
     elif d.day == 25:
         sale_desc = "Ngày Sale (Payday cuối tháng)"
-    elif d.day in [30, 31] or (d.month == 2 and d.day in [28, 29]):
-        sale_desc = "Ngày Sale (Cuối tháng)"
 
     descriptions = [desc for desc in (holiday_desc, sale_desc) if desc]
     return int(holiday_desc is not None), int(sale_desc is not None), " · ".join(descriptions) or "Ngày thường"
@@ -543,12 +532,12 @@ PHONE_TYPE_BRANDS = {
 # Hãng → Danh sách dòng máy (trích từ dữ liệu huấn luyện)
 BRAND_MODELS = {
     "Iphone": [
-        "Iphone 17 Pro Max", "Iphone 17 Pro", "Iphone 17",
+        "Iphone 17 Pro Max", "Iphone 17 Pro", "Iphone 17 Air", "Iphone 17",
         "Iphone 16 Pro Max", "Iphone 16 Pro", "Iphone 16 Plus", "Iphone 16",
         "Iphone 15 Pro Max", "Iphone 15 Pro", "Iphone 15 Plus", "Iphone 15",
         "Iphone 14 Pro Max", "Iphone 14 Pro", "Iphone 14 Plus", "Iphone 14",
         "Iphone 13 Pro Max", "Iphone 13 Pro", "Iphone 13 Mini", "Iphone 13",
-        "Iphone 12 Pro Max", "Iphone 12 Promax", "Iphone 12 Pro",
+        "Iphone 12 Pro Max", "Iphone 12 Pro",
         "Iphone 12 Mini", "Iphone 12",
         "Iphone 11 Pro Max", "Iphone 11 Pro", "Iphone 11",
         "Iphone Xs Max", "Iphone Xs", "Iphone Xr", "Iphone X",
@@ -556,24 +545,26 @@ BRAND_MODELS = {
         "Iphone 6S Plus", "Iphone 6S",
         "Iphone Se 2020", "Iphone Se",
         "16 Pro Max", "15 Pro Max", "14 Pro Max",
-        "13 Pro Max", "12 Pro Max", "11 Pro Max",
+        "12 Pro Max",
         "Iphone", "Khác",
     ],
     "Samsung": [
         "Samsung S26 Ultra",
         "Samsung S25 Ultra", "Samsung S25",
-        "Samsung S24 Ultra", "Samsung S24 Plus", "S24 Ultra",
+        "Samsung S24 Ultra", "Samsung S24 Plus", "Samsung S24",
         "Samsung S23 Ultra", "Samsung S23 Plus", "Samsung S23 Fe", "Samsung S23",
-        "Samsung S22 Ultra", "Samsung S22",
+        "Samsung S22 Ultra", "Samsung S22 Plus",
         "Samsung S21 Ultra", "Samsung S21 Plus", "Samsung S21 Fe", "Samsung S21",
-        "Samsung S20 Ultra", "Samsung S20 Fe", "Samsung S10",
+        "Samsung S20 Fe",
         "Samsung Note 20 Ultra", "Samsung Note 20", "Samsung Note 10 Plus",
-        "Samsung Z Fold 6", "Samsung Z Fold 4", "Samsung Z Flip 5",
-        "Samsung A56", "Samsung A36", "Samsung A12", "Samsung A06",
+        "Samsung Z Fold 6", "Samsung Z Fold 5", "Samsung Z Flip 5",
+        "Samsung A57", "Samsung A56", "Samsung A32", "Samsung A17",
+        "Samsung A12", "Samsung A06",
         "Khác",
     ],
     "Xiaomi": [
-        "Xiaomi 15 Ultra", "Xiaomi 15T", "Xiaomi 15",
+        "Xiaomi 15 Ultra", "Xiaomi 15T Pro", "Xiaomi 15T", "Xiaomi 15",
+        "Xiaomi 14", "Xiaomi 13",
         "Xiaomi Redmi Note 15", "Xiaomi Redmi Note 14", "Xiaomi Redmi Note 13",
         "Xiaomi Redmi Note 12", "Xiaomi Redmi Note 11", "Xiaomi Redmi Note 10",
         "Xiaomi Redmi Turbo 5", "Xiaomi Redmi Turbo 4",
@@ -589,14 +580,14 @@ BRAND_MODELS = {
         "Vivo X200 Pro Mini", "Vivo X200 Pro",
         "Khác",
     ],
-    "Google":  ["Google Pixel 9 Pro", "Khác"],
+    "Google":  ["Honor Magic 8 Pro", "Honor Magic 7 Pro", "Honor Win Rt", "Khác"],
     "Sony":    ["Sony Xperia 1 Mark", "Khác"],
     "Huawei":  ["Honor Magic 8 Pro", "Honor Magic 7 Pro", "Honor Win Rt", "Khác"],
     "Nokia":   ["Khác"],
     "Asus":    ["Khác"],
     "Realme":  ["Khác"],
     "Tecno":   ["Khác"],
-    "Khác":    ["Khác"],
+    "Khác":    ["Honor Magic 8 Pro", "Honor Magic 7 Pro", "Honor Win Rt", "Khác"],
 }
 
 
