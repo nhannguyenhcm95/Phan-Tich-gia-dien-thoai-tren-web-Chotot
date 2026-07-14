@@ -1,88 +1,100 @@
 # 📱 Hướng Dẫn Chạy & Deploy Web App Định Giá Điện Thoại Cũ
+# Phân Tích Giá Điện Thoại Trên Web Chợ Tốt
 
-Ứng dụng web định giá điện thoại cũ đã qua sử dụng trên Chợ Tốt sử dụng mô hình học máy kết hợp **Hybrid Ensemble (LightGBM + XGBoost + CatBoost)**. 
+## Giới Thiệu
 
-Thư mục `webapp/` chứa toàn bộ mã nguồn của ứng dụng.
+Đây là ứng dụng web hỗ trợ **phân tích và ước lượng giá điện thoại cũ** dựa trên dữ liệu tin đăng từ Chợ Tốt. Người dùng có thể nhập các thông tin của một chiếc điện thoại như hãng sản xuất, dòng máy, RAM, bộ nhớ trong, tình trạng máy, khu vực đăng bán, thông tin người bán và ngày đăng tin. Từ những thông tin đó, hệ thống sẽ sử dụng mô hình học máy để đưa ra mức giá tham khảo.
 
----
+Ứng dụng được xây dựng nhằm giải quyết một vấn đề thực tế: người bán thường khó xác định mức giá hợp lý cho điện thoại đã qua sử dụng, còn người mua lại cần một công cụ tham khảo để đánh giá xem mức giá đang được rao có phù hợp với thị trường hay không.
 
-## 🖥️ 1. Hướng Dẫn Chạy Ở Local (Máy Tính Cá Nhân)
+Thông qua website này, người dùng có thể:
 
-Để chạy thử nghiệm ứng dụng trên máy tính của bạn:
+- Ước lượng giá bán hợp lý cho một chiếc điện thoại cũ.
+- Phân tích các yếu tố ảnh hưởng đến giá như cấu hình, khu vực, tình trạng máy và uy tín người bán.
+- Tham khảo kết quả dự đoán từ nhiều thuật toán học máy khác nhau.
+- Xem khoảng giá đề xuất thay vì chỉ một con số cố định.
 
-### Bước 1: Cài đặt thư viện cần thiết
-Mở **Terminal / Command Prompt** tại thư mục `webapp/` và chạy lệnh sau để cài đặt các thư viện:
-```bash
-pip install -r requirements.txt
-```
-*(Nếu bạn cài nhiều phiên bản Python, hãy dùng `py -3.13 -m pip install -r requirements.txt`)*
-
-### Bước 2: Sao chép các file mô hình
-Nếu trong thư mục `models/` chưa có đủ 6 file mô hình (`preprocessor.pkl`, `brand_encoder.pkl`, `best_lgbm_optuna.pkl`, `hybrid_xgb_model.pkl`, `hybrid_cat_model.pkl`, `webapp_config.json`), hãy chạy script setup sau để tự động sao chép chúng:
-```bash
-python setup_models.py
-```
-
-### Bước 3: Khởi chạy ứng dụng Streamlit
-Chạy lệnh sau để bật giao diện web:
-```bash
-streamlit run app.py
-```
-*(Hoặc `py -3.13 -m streamlit run app.py`)*
-
-Một trang web sẽ tự động mở ra trên trình duyệt của bạn tại địa chỉ: `http://localhost:8501`.
+Ứng dụng phù hợp cho người bán muốn định giá sản phẩm trước khi đăng tin, người mua muốn tham khảo giá thị trường, hoặc sinh viên muốn tìm hiểu cách áp dụng Machine Learning vào bài toán phân tích giá trong thương mại điện tử.
 
 ---
 
-## 🚀 2. Hướng Dẫn Deploy Lên Public Web (Miễn Phí)
+## Chức Năng Chính Của Website
 
-Vì Streamlit chạy trên nền Python backend server, **Netlify KHÔNG hỗ trợ** (do Netlify chỉ host web tĩnh HTML/CSS/JS). Dưới đây là 2 cách deploy miễn phí tốt nhất cho ứng dụng Streamlit:
+### 1. Nhập Thông Tin Điện Thoại
 
-### Cách 1: Sử dụng Streamlit Community Cloud (Khuyến nghị số 1)
+Người dùng có thể nhập các thông tin quan trọng của sản phẩm, bao gồm:
 
-Streamlit cung cấp dịch vụ cloud host miễn phí rất mượt mà cho các ứng dụng viết bằng framework này.
+- Hệ điều hành: iPhone, Android hoặc điện thoại phổ thông.
+- Hãng sản xuất: Iphone, Samsung, Xiaomi, Oppo, Vivo, Sony, Huawei, Nokia và một số hãng khác.
+- Dòng máy cụ thể: ví dụ Iphone 15 Pro Max, Samsung S24 Ultra, Xiaomi 15 Ultra.
+- RAM và bộ nhớ trong.
+- Tình trạng máy: máy mới hoặc đã qua sử dụng.
+- Số tháng bảo hành còn lại.
+- Số lượng hình ảnh trong tin đăng.
 
-#### Bước 1: Đưa code lên GitHub
-1. Truy cập [github.com](https://github.com) và tạo một **Repository mới** (ví dụ đặt tên: `dinh-gia-dien-thoai-chotot`).
-2. Mở terminal tại thư mục `webapp/` trên máy và chạy các lệnh sau để đẩy code lên GitHub:
-```bash
-git init
-git add .
-git commit -m "Initial commit for streamlit app"
-git branch -M main
-git remote add origin https://github.com/TÊN_GITHUB_CỦA_BẠN/dinh-gia-dien-thoai-chotot.git
-git push -u origin main
-```
+Đối với iPhone, hệ thống có cơ chế tự động xác định RAM theo từng dòng máy để hạn chế sai sót khi nhập dữ liệu.
 
-#### Bước 2: Deploy lên Streamlit Cloud
-1. Truy cập [share.streamlit.io](https://share.streamlit.io) và đăng nhập bằng tài khoản GitHub của bạn.
-2. Nhấn nút **"New app"** (hoặc **"Create app"**).
-3. Điền thông tin cấu hình:
-   - **Repository**: Chọn repo bạn vừa tạo (`TÊN_GITHUB_CỦA_BẠN/dinh-gia-dien-thoai-chotot`).
-   - **Branch**: `main`
-   - **Main file path**: `app.py`
-4. Nhấn **"Deploy!"**.
-5. Đợi khoảng 1-2 phút để hệ thống tự động cài đặt các thư viện trong `requirements.txt` và build ứng dụng. Sau đó bạn sẽ nhận được đường link public có dạng: `https://[tên-app].streamlit.app`.
+### 2. Nhập Thông Tin Đăng Bán
+
+Ngoài cấu hình điện thoại, website còn cho phép nhập các yếu tố liên quan đến tin đăng:
+
+- Tỉnh/thành phố và quận/huyện đăng bán.
+- Vùng địa lý của tin đăng.
+- Ngày đăng tin.
+- Tin có rơi vào ngày lễ, cuối tuần hoặc ngày sale hay không.
+- Số ngày tin đã tồn tại trên thị trường.
+
+Những yếu tố này giúp mô hình phân tích sát thực tế hơn, vì giá điện thoại cũ có thể thay đổi theo khu vực, thời điểm đăng bán và hành vi mua sắm của người dùng.
+
+### 3. Nhập Thông Tin Người Bán
+
+Một số thông tin về người bán cũng được đưa vào quá trình dự đoán:
+
+- Người bán là cá nhân hay cửa hàng/chuyên trang.
+- Có chính sách bảo vệ hoặc thanh toán an toàn hay không.
+- Điểm đánh giá của người bán.
+- Số tin đã bán thành công.
+
+Đây là nhóm thông tin quan trọng vì uy tín người bán có thể ảnh hưởng trực tiếp đến mức giá kỳ vọng của sản phẩm.
+
+### 4. Dự Đoán Giá Điện Thoại
+
+Sau khi người dùng nhập đầy đủ thông tin và nhấn nút dự đoán, hệ thống sẽ:
+
+1. Chuẩn hóa dữ liệu đầu vào.
+2. Mã hóa các biến phân loại như hãng, khu vực, dòng máy.
+3. Đưa dữ liệu qua bộ tiền xử lý.
+4. Chạy lần lượt các mô hình dự đoán.
+5. Tổng hợp kết quả bằng mô hình Hybrid Ensemble.
+6. Hiển thị mức giá đề xuất và khoảng giá tham khảo.
+
+Kết quả hiển thị bao gồm:
+
+- Giá dự đoán cuối cùng của mô hình kết hợp.
+- Giá dự đoán riêng từ LightGBM.
+- Giá dự đoán riêng từ XGBoost.
+- Giá dự đoán riêng từ CatBoost.
+- Khoảng giá tham khảo dựa trên sai số RMSE.
 
 ---
 
-### Cách 2: Sử dụng Hugging Face Spaces (Miễn phí & Rất ổn định)
+## Các Thuật Toán Đã Áp Dụng
 
-Hugging Face Spaces là một nền tảng tuyệt vời khác để host các ứng dụng AI/ML viết bằng Streamlit hoàn toàn miễn phí.
+Ứng dụng sử dụng hướng tiếp cận **Hybrid Ensemble**, tức là kết hợp nhiều mô hình học máy để tạo ra kết quả dự đoán ổn định hơn so với việc chỉ dùng một thuật toán duy nhất.
 
-1. Truy cập [huggingface.co](https://huggingface.co), đăng ký tài khoản và đăng nhập.
-2. Click vào ảnh đại diện góc trên bên phải -> chọn **"New Space"**.
-3. Điền các thông tin:
-   - **Space name**: Tên app của bạn (VD: `dinh-gia-dien-thoai`).
-   - **SDK**: Chọn **Streamlit**.
-   - **Space hardware**: Chọn **Cpu basic (Free)**.
-   - **Privacy**: Chọn **Public**.
-4. Sau khi tạo Space, Hugging Face sẽ cung cấp một Git repository. Bạn chỉ cần clone repo đó về máy, copy toàn bộ file trong thư mục `webapp/` vào đó, rồi `git add`, `git commit` và `git push` lên Hugging Face.
-5. Ứng dụng sẽ tự động được build và chạy public trên website của Hugging Face.
+### 1. LightGBM
 
----
+LightGBM là thuật toán Gradient Boosting được tối ưu cho tốc độ và hiệu năng trên dữ liệu dạng bảng. Trong bài toán này, LightGBM được dùng để học mối quan hệ phi tuyến giữa các đặc trưng của điện thoại và giá bán.
 
-## 🛠️ Lưu Ý Về Kỹ Thuật
+LightGBM phù hợp với bài toán định giá điện thoại vì:
 
-- **Vấn đề Pickle & Joblib**: Các file mô hình preprocessor và encoder được tạo ra bằng thư viện `joblib`. Ứng dụng đã được cập nhật sử dụng `joblib.load` thay cho `pickle.load` thông thường để tránh gặp lỗi `STACK_GLOBAL requires str` trên các phiên bản Python mới (như Python 3.13 hoặc 3.14).
-- **GitHub LFS (Large File Storage)**: Tổng dung lượng các file mô hình trong thư mục `models/` là khoảng **8MB**. Mức dung lượng này nhỏ hơn giới hạn 100MB của GitHub nên bạn có thể `git push` trực tiếp lên GitHub thông thường mà **không cần cài đặt GitHub LFS**, giúp quá trình deploy trở nên vô cùng đơn giản.
+- Xử lý tốt dữ liệu có nhiều đặc trưng.
+- Học được các quy luật phức tạp trong thị trường điện thoại cũ.
+- Cho kết quả tốt trên tập kiểm tra.
+- Tốc độ dự đoán nhanh, phù hợp để tích hợp vào web app.
+
+Trong mô hình Hybrid Ensemble, LightGBM có trọng số **45%**.
+
+### 2. XGBoost
+
+XGBoost là một trong những thuật toán boosting mạnh và phổ biến cho dữ liệu có cấu trúc. XGBoost được sử dụng để bổ sung thêm góc nhìn dự đoán cho LightGBM, giúp hệ thống giảm phụ thuộc vào một mô hình duy nhất.
